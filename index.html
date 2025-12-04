@@ -20,7 +20,7 @@
                 <label>1. 對輔大印象最深刻的是什麼？(關鍵字)</label>
                 <input type="text" id="impression" placeholder="例如：中美堂、大菠蘿..." required>
                 
-                <label>2. 最想跟輔大及管理學院說的話(選填)</label>
+                <label>2. 最想跟輔大及管理學院說的話 (選填)</label>
                 <textarea id="message" rows="4" placeholder="寫下您的祝福..."></textarea>
 
                 <button type="submit" class="submit-btn" id="btn-submit">送出留言</button>
@@ -55,13 +55,15 @@
             btn.innerText = "傳送中...";
 
             const imp = document.getElementById('impression').value.trim();
-            const msg = document.getElementById('message').value.trim();
-
-            if(imp && msg) {
+            // 由於 message 已經非必填，我們賦予它一個預設值，確保資料庫欄位不會遺失
+            const msg = document.getElementById('message').value.trim() || "(無留言)"; 
+            
+            // 檢查：關鍵字 (imp) 必須填寫
+            if(imp) {
                 const newPostRef = push(ref(db, 'messages'));
                 set(newPostRef, {
                     keyword: imp,
-                    content: msg,
+                    content: msg, // 使用新的 msg 變數，它會是留言內容或 "(無留言)"
                     timestamp: Date.now()
                 }).then(() => {
                     alert("收到您的留言了！請看前方大螢幕！");
@@ -73,6 +75,11 @@
                     console.error(error);
                     btn.disabled = false;
                 });
+            } else {
+                // 如果關鍵字沒填，提示使用者
+                alert("請至少填寫對輔大印象最深刻的關鍵字！");
+                btn.disabled = false;
+                btn.innerText = "送出留言";
             }
         });
     </script>
