@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>即時互動牆</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.2.2/wordcloud2.min.js"></script>
+</head>
+<body>
+
+<div class="dashboard-container">
+    <header style="margin-top: 20px;">
+        <h1>輔仁大學管理學院 - 校友心聲牆 🎓</h1>
+    </header>
+
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="switchTab('cloud')">☁️ 印象關鍵字 (文字雲)</button>
+        <button class="tab-btn" onclick="switchTab('list')">📝 校友留言板 (列表)</button>
+    </div>
+
+    <div id="word-cloud-view" class="active">
+        <canvas id="cloud-canvas"></canvas>
+    </div>
+
+    <div id="list-view">
+        <div class="response-grid" id="response-list">
+            </div>
+    </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
+  import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js";
+
+  // TODO: 請在此處貼上同樣的 Firebase Config
+  const firebaseConfig = {
+   apiKey: "AIzaSyDWWXuU16UwB8iXo5tEVuzYYVP9ppslisk",
+  authDomain: "fjcu-dinner.firebaseapp.com",
+  projectId: "fjcu-dinner",
+  storageBucket: "fjcu-dinner.firebasestorage.app",
+  messagingSenderId: "461813917984",
+  appId: "1:461813917984:web:717f2404d20dd9a0d68f45",
+  measurementId: "G-9TQS9R3CDC"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const canvas = document.getElementById('cloud-canvas');
+  // 設定 Canvas 大小
+  canvas.width = document.getElementById('word-cloud-view').offsetWidth;
+  canvas.height = document.getElementById('word-cloud-view').offsetHeight;
+
+  // 監聽資料庫變化
+  const q = query(collection(db, "responses"), orderBy("timestamp", "desc"));
+  
+  onSnapshot(q, (snapshot) => {
+      const wordsMap = {};
+      const responsesHTML = [];
+
+      snapshot.forEach((doc) => {
+          const data = doc.data();
+          
+          // 處理文字雲 (計算次數)
+          // 簡單處理：直接用輸入的短句當作關鍵字
+          const key = data.impression.trim();
+          if (key) {
+              wordsMap[key] = (wordsMap[key] || 0) + 1;
+          }
+
+          // 處理列表
+          responsesHTML.push(`
+              <div class="response-card">
+                  <span class="keyword-tag">#${data.impression}</span>
+                  <p>${data.message}</p>
+              </div>
+          `);
+      });
+
+      // 更新列表
+      document.getElementById('response-list').innerHTML = responsesHTML.join('');
+
+      // 更新文字雲數據格式
+      const wordList = Object.keys(wordsMap).map(key => [key, wordsMap[key] * 15 + 10]); // 權重放大字體
+      
+      // 繪製文字雲
+      if(document.getElementById('word-cloud-view').classList.contains('active')){
+          WordCloud(canvas, { 
+              list: wordList,
+              gridSize: 8,
+              weightFactor: function (size) { return size * 1.5; }, // 字體大小調整
+              fontFamily: 'Noto Sans TC',
+              color: 'random-dark',
+              backgroundColor: '#ffffff',
+              rotateRatio: 0.5
+          });
+      }
+  });
+
+  // 簡單的 Tab 切換功能
+  window.switchTab = (tab) => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('#word-cloud-view, #list-view').forEach(v => v.classList.remove('active'));
+
+      if(tab === 'cloud') {
+          document.querySelector('button[onclick="switchTab(\'cloud\')"]').classList.add('active');
+          document.getElementById('word-cloud-view').classList.add('active');
+          // 重新觸發文字雲渲染以適應大小
+          location.reload(); // 簡單暴力刷新確保 Canvas 正常，或可重新呼叫 WordCloud 函式
+      } else {
+          document.querySelector('button[onclick="switchTab(\'list\')"]').classList.add('active');
+          document.getElementById('list-view').classList.add('active');
+      }
+  }
+</script>
+
+</body>
+</html>

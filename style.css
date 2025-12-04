@@ -1,0 +1,187 @@
+:root {
+    --fjcu-blue: #003D79;
+    --fjcu-accent: #F2A900;
+    --bg-cream: #F9F7F2;
+    --card-bg: #FFFFFF;
+    --text-main: #333333;
+    --shadow: 0 4px 12px rgba(0, 61, 121, 0.15);
+    --radius: 16px;
+}
+
+body {
+    font-family: 'Noto Sans TC', sans-serif;
+    background-color: var(--bg-cream);
+    background-image: radial-gradient(var(--fjcu-blue) 1px, transparent 1px);
+    background-size: 20px 20px; /* 點狀地圖背景 */
+    color: var(--text-main);
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+.container {
+    width: 90%;
+    max-width: 600px;
+    padding: 40px 20px;
+}
+
+/* Header Style */
+header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+h1 {
+    color: var(--fjcu-blue);
+    font-size: 1.8rem;
+    background: white;
+    display: inline-block;
+    padding: 10px 20px;
+    border-radius: 50px;
+    box-shadow: var(--shadow);
+    border: 2px solid var(--fjcu-blue);
+}
+
+/* Card Style (Map Info Style) */
+.card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 25px;
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+    border-left: 5px solid var(--fjcu-accent);
+    transition: transform 0.2s;
+}
+
+label {
+    font-weight: bold;
+    color: var(--fjcu-blue);
+    display: block;
+    margin-bottom: 8px;
+    font-size: 1.1rem;
+}
+
+input, textarea {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #eee;
+    border-radius: 12px;
+    font-size: 1rem;
+    box-sizing: border-box;
+    margin-bottom: 20px;
+    font-family: inherit;
+}
+
+input:focus, textarea:focus {
+    border-color: var(--fjcu-blue);
+    outline: none;
+}
+
+button {
+    background: var(--fjcu-blue);
+    color: white;
+    border: none;
+    width: 100%;
+    padding: 15px;
+    font-size: 1.2rem;
+    border-radius: 50px;
+    cursor: pointer;
+    font-weight: bold;
+    box-shadow: 0 4px 0 #002a52; /* Button 3D effect */
+    transition: transform 0.1s;
+}
+
+button:active {
+    transform: translateY(4px);
+    box-shadow: none;
+}
+
+/* Dashboard Specifics */
+.dashboard-container {
+    width: 95%;
+    max-width: 1200px;
+    display: flex;
+    flex-direction: column;
+    height: 95vh;
+}
+
+.nav-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.tab-btn {
+    width: auto;
+    padding: 10px 30px;
+    background: white;
+    color: var(--fjcu-blue);
+    border: 2px solid var(--fjcu-blue);
+    box-shadow: none;
+}
+
+.tab-btn.active {
+    background: var(--fjcu-blue);
+    color: white;
+}
+
+#word-cloud-view, #list-view {
+    flex: 1;
+    background: white;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px;
+    overflow: hidden;
+    display: none; /* Hidden by default */
+}
+
+#word-cloud-view.active, #list-view.active {
+    display: block;
+}
+
+/* Word Cloud Canvas */
+#cloud-canvas {
+    width: 100%;
+    height: 100%;
+}
+
+/* List Style */
+.response-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    overflow-y: auto;
+    height: 100%;
+    padding: 10px;
+}
+
+.response-card {
+    background: #fff;
+    border: 2px solid #eee;
+    border-radius: 12px;
+    padding: 15px;
+    position: relative;
+}
+
+.response-card::before {
+    content: "❝";
+    font-size: 3rem;
+    color: var(--fjcu-accent);
+    opacity: 0.3;
+    position: absolute;
+    top: -10px;
+    right: 10px;
+}
+
+.keyword-tag {
+    background: var(--fjcu-blue);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    display: inline-block;
+    margin-bottom: 8px;
+}

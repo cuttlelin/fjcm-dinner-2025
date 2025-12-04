@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>輔大管院校友晚宴 - 互動問答</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🎓 輔大管院校友晚宴</h1>
+        <p>歡迎回家！請留下您的想法</p>
+    </header>
+
+    <div class="card">
+        <form id="alumForm">
+            <label for="impression">1. 對輔大印象最深刻的是什麼？</label>
+            <input type="text" id="impression" placeholder="例如：中美堂、大菠蘿、修女..." required>
+            
+            <label for="message">2. 最想跟輔大及管院說的話</label>
+            <textarea id="message" rows="4" placeholder="寫下您的祝福或是回憶..." required></textarea>
+            
+            <button type="submit">送出留言</button>
+        </form>
+    </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js";
+
+  // TODO: 請在此處貼上您的 Firebase Config
+  const firebaseConfig = {
+    apiKey: "AIzaSyDWWXuU16UwB8iXo5tEVuzYYVP9ppslisk",
+	authDomain: "fjcu-dinner.firebaseapp.com",
+	projectId: "fjcu-dinner",
+	storageBucket: "fjcu-dinner.firebasestorage.app",
+	messagingSenderId: "461813917984",
+	appId: "1:461813917984:web:717f2404d20dd9a0d68f45",
+	measurementId: "G-9TQS9R3CDC"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  document.getElementById('alumForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const impression = document.getElementById('impression').value;
+      const message = document.getElementById('message').value;
+      const btn = e.target.querySelector('button');
+
+      btn.textContent = '傳送中...';
+      btn.disabled = true;
+
+      try {
+          await addDoc(collection(db, "responses"), {
+              impression: impression,
+              message: message,
+              timestamp: serverTimestamp()
+          });
+          alert("收到您的留言了！謝謝學長姐！");
+          document.getElementById('alumForm').reset();
+          btn.textContent = '送出留言';
+          btn.disabled = false;
+      } catch (err) {
+          console.error("Error", err);
+          alert("發生錯誤，請稍後再試");
+          btn.textContent = '送出留言';
+          btn.disabled = false;
+      }
+  });
+</script>
+
+</body>
+</html>
