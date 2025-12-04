@@ -3,117 +3,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>即時互動牆</title>
+    <title>即時互動牆 - 輔大管院</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.2.2/wordcloud2.min.js"></script>
 </head>
 <body>
-
-<div class="dashboard-container">
-    <header style="margin-top: 20px;">
-        <h1>輔仁大學管理學院 - 校友心聲牆 🎓</h1>
+    <header>
+        <h1>輔大管院 2024 校友晚宴 - 即時互動牆</h1>
     </header>
 
-    <div class="nav-tabs">
-        <button class="tab-btn active" onclick="switchTab('cloud')">☁️ 印象關鍵字 (文字雲)</button>
-        <button class="tab-btn" onclick="switchTab('list')">📝 校友留言板 (列表)</button>
+    <div class="container" style="max-width: 1000px;">
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('cloud')">關鍵字雲</button>
+            <button class="tab-btn" onclick="switchTab('list')">留言列表 (<span id="count">0</span>)</button>
+        </div>
+
+        <div id="view-cloud" class="card">
+            <div id="word-cloud-canvas"></div>
+            <p style="text-align:center; color:#999; font-size:0.8rem;">* 即時更新中 *</p>
+        </div>
+
+        <div id="view-list" class="hidden">
+            <ul class="message-list" id="msg-list">
+                </ul>
+        </div>
     </div>
 
-    <div id="word-cloud-view" class="active">
-        <canvas id="cloud-canvas"></canvas>
-    </div>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
 
-    <div id="list-view">
-        <div class="response-grid" id="response-list">
-            </div>
-    </div>
-</div>
+        // ⚠️【請將這裡換成與 index.html 完全一樣的設定】⚠️
+        const firebaseConfig = {
+            apiKey: "AIzaSyDWWXuU16UwB8iXo5tEVuzYYVP9ppslisk",
+			authDomain: "fjcu-dinner.firebaseapp.com",
+			projectId: "fjcu-dinner",
+			storageBucket: "fjcu-dinner.firebasestorage.app",
+			messagingSenderId: "461813917984",
+			appId: "1:461813917984:web:717f2404d20dd9a0d68f45",
+			measurementId: "G-9TQS9R3CDC"
+        };
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-  import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js";
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        
+        let allData = [];
 
-  // TODO: 請在此處貼上同樣的 Firebase Config
-  const firebaseConfig = {
-   apiKey: "AIzaSyDWWXuU16UwB8iXo5tEVuzYYVP9ppslisk",
-  authDomain: "fjcu-dinner.firebaseapp.com",
-  projectId: "fjcu-dinner",
-  storageBucket: "fjcu-dinner.firebasestorage.app",
-  messagingSenderId: "461813917984",
-  appId: "1:461813917984:web:717f2404d20dd9a0d68f45",
-  measurementId: "G-9TQS9R3CDC"
-  };
+        // 監聽資料庫變化 (Realtime)
+        const messagesRef = ref(db, 'messages');
+        onValue(messagesRef, (snapshot) => {
+            const data = snapshot.val();
+            const listEl = document.getElementById('msg-list');
+            listEl.innerHTML = ""; // 清空重繪
+            allData = [];
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+            if (data) {
+                // 轉成陣列並反轉 (最新的在上面)
+                const entries = Object.values(data).reverse();
+                document.getElementById('count').innerText = entries.length;
 
-  const canvas = document.getElementById('cloud-canvas');
-  // 設定 Canvas 大小
-  canvas.width = document.getElementById('word-cloud-view').offsetWidth;
-  canvas.height = document.getElementById('word-cloud-view').offsetHeight;
+                entries.forEach(item => {
+                    allData.push(item);
+                    // 建立列表項目
+                    const li = document.createElement('li');
+                    li.className = 'message-item';
+                    li.innerHTML = `<span class="tag">#${item.keyword}</span> <span class="msg-content">${item.content}</span>`;
+                    listEl.appendChild(li);
+                });
 
-  // 監聽資料庫變化
-  const q = query(collection(db, "responses"), orderBy("timestamp", "desc"));
-  
-  onSnapshot(q, (snapshot) => {
-      const wordsMap = {};
-      const responsesHTML = [];
+                // 更新文字雲
+                updateWordCloud();
+            }
+        });
 
-      snapshot.forEach((doc) => {
-          const data = doc.data();
-          
-          // 處理文字雲 (計算次數)
-          // 簡單處理：直接用輸入的短句當作關鍵字
-          const key = data.impression.trim();
-          if (key) {
-              wordsMap[key] = (wordsMap[key] || 0) + 1;
-          }
+        // 文字雲邏輯
+        function updateWordCloud() {
+            const freq = {};
+            allData.forEach(d => {
+                let k = d.keyword;
+                freq[k] = (freq[k] || 0) + 1;
+            });
 
-          // 處理列表
-          responsesHTML.push(`
-              <div class="response-card">
-                  <span class="keyword-tag">#${data.impression}</span>
-                  <p>${data.message}</p>
-              </div>
-          `);
-      });
+            const cloudList = [];
+            for (const [key, val] of Object.entries(freq)) {
+                // 權重放大，讓字比較明顯
+                cloudList.push([key, val * 15 + 15]); 
+            }
 
-      // 更新列表
-      document.getElementById('response-list').innerHTML = responsesHTML.join('');
+            const canvas = document.getElementById('word-cloud-canvas');
+            // 每次重繪前清除
+            canvas.innerHTML = ''; 
+            
+            WordCloud(canvas, {
+                list: cloudList,
+                gridSize: 10,
+                weightFactor: 2,
+                fontFamily: '"Microsoft JhengHei", sans-serif',
+                color: 'random-dark',
+                rotateRatio: 0,
+                backgroundColor: 'transparent'
+            });
+        }
 
-      // 更新文字雲數據格式
-      const wordList = Object.keys(wordsMap).map(key => [key, wordsMap[key] * 15 + 10]); // 權重放大字體
-      
-      // 繪製文字雲
-      if(document.getElementById('word-cloud-view').classList.contains('active')){
-          WordCloud(canvas, { 
-              list: wordList,
-              gridSize: 8,
-              weightFactor: function (size) { return size * 1.5; }, // 字體大小調整
-              fontFamily: 'Noto Sans TC',
-              color: 'random-dark',
-              backgroundColor: '#ffffff',
-              rotateRatio: 0.5
-          });
-      }
-  });
-
-  // 簡單的 Tab 切換功能
-  window.switchTab = (tab) => {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('#word-cloud-view, #list-view').forEach(v => v.classList.remove('active'));
-
-      if(tab === 'cloud') {
-          document.querySelector('button[onclick="switchTab(\'cloud\')"]').classList.add('active');
-          document.getElementById('word-cloud-view').classList.add('active');
-          // 重新觸發文字雲渲染以適應大小
-          location.reload(); // 簡單暴力刷新確保 Canvas 正常，或可重新呼叫 WordCloud 函式
-      } else {
-          document.querySelector('button[onclick="switchTab(\'list\')"]').classList.add('active');
-          document.getElementById('list-view').classList.add('active');
-      }
-  }
-</script>
-
+        // 供全域呼叫的切換功能
+        window.switchTab = function(tab) {
+            if(tab === 'cloud') {
+                document.getElementById('view-cloud').classList.remove('hidden');
+                document.getElementById('view-list').classList.add('hidden');
+                document.querySelectorAll('.tab-btn')[0].classList.add('active');
+                document.querySelectorAll('.tab-btn')[1].classList.remove('active');
+                updateWordCloud(); // 切回來時重繪以免跑版
+            } else {
+                document.getElementById('view-cloud').classList.add('hidden');
+                document.getElementById('view-list').classList.remove('hidden');
+                document.querySelectorAll('.tab-btn')[0].classList.remove('active');
+                document.querySelectorAll('.tab-btn')[1].classList.add('active');
+            }
+        }
+    </script>
 </body>
 </html>
